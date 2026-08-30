@@ -14,13 +14,7 @@ export function getSupabase() {
       );
     }
 
-    _client = createClient(url, key, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false,
-      },
-    });
+    _client = createClient(url, key);
   }
 
   return _client;
