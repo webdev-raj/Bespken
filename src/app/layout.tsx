@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import localFont from 'next/font/local';
 import './globals.css';
 
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
+const generalSans = localFont({
+  src: '../../public/fonts/GeneralSans-Regular.otf',
+  variable: '--font-general-sans',
   display: 'swap',
 });
 
@@ -38,8 +38,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable}`}>
+    <html lang="en" className={`${generalSans.variable}`}>
       <body className="antialiased bg-[#0B0B0F] text-white">{children}</body>
     </html>
   );
 }
+
