@@ -4,19 +4,19 @@ export default function HeroSection() {
   return (
     <section
       id="hero"
-      className="relative min-h-[90vh] flex flex-col items-center justify-center px-6 pt-28 pb-20 overflow-hidden"
+      className="relative w-full min-h-[90vh] flex flex-col items-center justify-center px-6 pt-28 pb-20 overflow-hidden"
       aria-label="Hero"
     >
       {/* Background ambient radial gradients & grid pattern */}
       <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[550px] rounded-full opacity-20 pointer-events-none"
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] max-w-full h-[550px] rounded-full opacity-20 pointer-events-none"
         style={{
           background: 'radial-gradient(ellipse at 50% 0%, #F2A84D 0%, rgba(242, 168, 77, 0.15) 45%, transparent 75%)',
         }}
         aria-hidden="true"
       />
       <div
-        className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[350px] rounded-full opacity-10 blur-3xl pointer-events-none"
+        className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] max-w-full h-[350px] rounded-full opacity-10 blur-3xl pointer-events-none"
         style={{
           background: 'radial-gradient(circle, #f59e0b 0%, transparent 70%)',
         }}
@@ -67,7 +67,7 @@ export default function HeroSection() {
         <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-stone-950/60 backdrop-blur-xl p-4 sm:p-6 lg:p-8 shadow-2xl shadow-black/80 ring-1 ring-white/5 relative overflow-hidden">
           {/* Subtle top glare effect */}
           <div 
-            className="absolute -top-24 left-1/2 -translate-x-1/2 w-[500px] h-[100px] bg-amber-400/10 blur-2xl rounded-full pointer-events-none"
+            className="absolute -top-24 left-1/2 -translate-x-1/2 w-[500px] max-w-full h-[100px] bg-amber-400/10 blur-2xl rounded-full pointer-events-none"
             aria-hidden="true" 
           />
 

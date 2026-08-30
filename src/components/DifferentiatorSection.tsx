@@ -35,7 +35,7 @@ export default function DifferentiatorSection() {
   return (
     <section
       id="what-makes-this-different"
-      className="relative px-6 py-24 sm:py-32"
+      className="relative w-full overflow-hidden px-6 py-24 sm:py-32"
       aria-label="What makes this different"
     >
       <div className="max-w-5xl mx-auto">
@@ -56,9 +56,8 @@ export default function DifferentiatorSection() {
         {/* Comparison table */}
         <div className="mt-14 rounded-2xl border border-white/8 overflow-hidden">
           {/* Header */}
-          <div className="grid grid-cols-[1fr_1fr_1fr] border-b border-white/8">
-            <div className="px-6 py-4 text-xs font-semibold text-stone-500 uppercase tracking-wide" />
-            <div className="px-6 py-4 text-xs font-semibold text-stone-500 uppercase tracking-wide border-l border-white/8">
+          <div className="hidden sm:grid sm:grid-cols-2 border-b border-white/8">
+            <div className="px-6 py-4 text-xs font-semibold text-stone-500 uppercase tracking-wide">
               Other tools
             </div>
             <div className="px-6 py-4 bg-amber-400/5 border-l border-amber-400/15">
@@ -70,13 +69,10 @@ export default function DifferentiatorSection() {
           {comparisons.map((row, i) => (
             <div
               key={i}
-              className={`grid grid-cols-[1fr_1fr_1fr] ${i < comparisons.length - 1 ? 'border-b border-white/6' : ''}`}
+              className={`grid grid-cols-1 sm:grid-cols-2 ${i < comparisons.length - 1 ? 'border-b border-white/6' : ''}`}
             >
-              {/* Row label (hidden — description serves as label) */}
-              <div className="px-6 py-5 text-stone-500 text-xs leading-relaxed hidden sm:block" />
-
               {/* Them */}
-              <div className="px-6 py-5 border-l border-white/6 col-start-1 sm:col-start-2">
+              <div className="px-6 py-5 border-b sm:border-b-0 border-white/6">
                 <div className="flex items-start gap-2">
                   <svg className="shrink-0 mt-0.5" width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
                     <circle cx="7" cy="7" r="6" stroke="#52525b" strokeWidth="1" />
@@ -90,7 +86,7 @@ export default function DifferentiatorSection() {
               </div>
 
               {/* Us */}
-              <div className="px-6 py-5 bg-amber-400/3 border-l border-amber-400/10">
+              <div className="px-6 py-5 bg-amber-400/3 sm:border-l border-amber-400/10">
                 <div className="flex items-start gap-2">
                   <svg className="shrink-0 mt-0.5" width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
                     <circle cx="7" cy="7" r="6" stroke="#F2A84D" strokeWidth="1" strokeOpacity="0.7" />

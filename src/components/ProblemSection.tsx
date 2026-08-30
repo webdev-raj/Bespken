@@ -2,7 +2,7 @@ export default function ProblemSection() {
   return (
     <section
       id="problem"
-      className="relative px-6 py-24 sm:py-32"
+      className="relative w-full overflow-hidden px-6 py-24 sm:py-32"
       aria-label="The problem"
     >
       <div className="max-w-3xl mx-auto text-center">
@@ -25,7 +25,7 @@ export default function ProblemSection() {
         </div>
 
         {/* Visual time stat */}
-        <div className="mt-14 inline-flex items-center gap-6 px-8 py-5 rounded-2xl border border-white/8 bg-white/3">
+        <div className="mt-14 inline-flex flex-row items-center justify-center gap-4 sm:gap-6 px-4 sm:px-8 py-4 sm:py-5 rounded-2xl border border-white/8 bg-white/3 max-w-full">
           <div className="text-left">
             <div className="text-4xl font-bold text-white">90<span className="text-amber-400">min</span></div>
             <div className="text-xs text-stone-500 mt-1">avg. time writing proposals after calls</div>

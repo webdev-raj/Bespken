@@ -53,7 +53,7 @@ export default function WhoItsForSection() {
   return (
     <section
       id="who-its-for"
-      className="relative px-6 py-24 sm:py-32"
+      className="relative w-full overflow-hidden px-6 py-24 sm:py-32"
       aria-label="Who it's for"
     >
       <div className="max-w-5xl mx-auto">

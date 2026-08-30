@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getSupabase } from '@/lib/supabase';
 
 interface WaitlistFormProps {
@@ -12,6 +12,15 @@ export default function WaitlistForm({ id = 'waitlist-form', variant = 'hero' }:
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'duplicate' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedEmail = localStorage.getItem('bespken_waitlist_email');
+      if (savedEmail) {
+        setStatus('duplicate');
+      }
+    }
+  }, []);
 
   const isValidEmail = (val: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
@@ -35,6 +44,9 @@ export default function WaitlistForm({ id = 'waitlist-form', variant = 'hero' }:
       if (error) {
         if (error.code === '23505') {
           // Unique constraint violation — already signed up
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('bespken_waitlist_email', email.trim().toLowerCase());
+          }
           setStatus('duplicate');
         } else {
           console.error('Supabase error:', error);
@@ -42,6 +54,9 @@ export default function WaitlistForm({ id = 'waitlist-form', variant = 'hero' }:
           setErrorMsg('Something went wrong. Please try again.');
         }
       } else {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('bespken_waitlist_email', email.trim().toLowerCase());
+        }
         setStatus('success');
       }
     } catch (err) {

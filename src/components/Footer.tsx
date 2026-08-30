@@ -3,7 +3,7 @@ export default function Footer() {
 
   return (
     <footer
-      className="relative px-6 py-12 border-t border-white/6"
+      className="relative w-full overflow-hidden px-6 py-12 border-t border-white/6"
       role="contentinfo"
     >
       <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
@@ -25,7 +25,7 @@ export default function Footer() {
         </div>
 
         {/* Copyright */}
-        <p className="text-xs text-stone-600">
+        <p className="text-xs text-stone-600" suppressHydrationWarning>
           &copy; {year} Bespken. All rights reserved.
         </p>
       </div>

@@ -39,7 +39,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${generalSans.variable}`}>
-      <body className="antialiased bg-[#0B0B0F] text-white">{children}</body>
+      <body className="antialiased bg-[#0B0B0F] text-white w-full max-w-full overflow-x-hidden">{children}</body>
     </html>
   );
 }

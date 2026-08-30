@@ -39,12 +39,12 @@ export default function TrustSection() {
   return (
     <section
       id="privacy"
-      className="relative px-6 py-24 sm:py-32"
+      className="relative w-full overflow-hidden px-6 py-24 sm:py-32"
       aria-label="Privacy and trust"
     >
       {/* Subtle ambient glow */}
       <div
-        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full opacity-8 pointer-events-none"
+        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] max-w-full h-[300px] rounded-full opacity-8 pointer-events-none"
         style={{ background: 'radial-gradient(ellipse at 50% 100%, #F2A84D 0%, transparent 70%)' }}
         aria-hidden="true"
       />
