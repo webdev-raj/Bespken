@@ -1,20 +1,14 @@
-import { createClient } from '@supabase/supabase-js';
+import { createBrowserClient } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { requirePublicEnv } from "@/lib/supabaseEnv";
 
-// Lazy singleton — only created client-side when first needed
-let _client: ReturnType<typeof createClient> | null = null;
+let _client: SupabaseClient | null = null;
 
+/** Browser client (PKCE + cookie session). Use from Client Components only. */
 export function getSupabase() {
   if (!_client) {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    if (!url || !key) {
-      throw new Error(
-        'Missing Supabase environment variables. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local'
-      );
-    }
-
-    _client = createClient(url, key);
+    const { url, key } = requirePublicEnv();
+    _client = createBrowserClient(url, key);
   }
 
   return _client;
