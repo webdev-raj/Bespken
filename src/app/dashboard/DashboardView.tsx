@@ -407,6 +407,7 @@ function EventCard({
   onJoin: () => void;
 }) {
   const loading = joinState.status === "loading";
+  const joined = joinState.status === "success";
 
   return (
     <li className="rounded-2xl border border-white/8 bg-white/2 p-5 hover:border-amber-400/20 hover:bg-white/4 transition-all duration-300">
@@ -415,17 +416,25 @@ function EventCard({
           <p className="font-medium text-white truncate">{event.summary}</p>
           <p className="text-sm text-stone-400 mt-1">{formatEventWhen(event.start)}</p>
         </div>
-        <button
-          type="button"
-          onClick={onJoin}
-          disabled={loading || joinState.status === "success"}
-          className="shrink-0 px-4 py-2.5 rounded-lg bg-amber-400 text-stone-900 font-semibold text-sm hover:bg-amber-300 active:scale-[0.98] transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 focus:ring-offset-[#0B0B0F]"
-        >
-          {loading ? "Joining…" : joinState.status === "success" ? "Joining call" : "Join with Bespken"}
-        </button>
+        {joined ? (
+          <span className="shrink-0 inline-flex items-center px-4 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium text-sm">
+            Joined
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={onJoin}
+            disabled={loading}
+            className="shrink-0 px-4 py-2.5 rounded-lg bg-amber-400 text-stone-900 font-semibold text-sm hover:bg-amber-300 active:scale-[0.98] transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 focus:ring-offset-[#0B0B0F]"
+          >
+            {loading ? "Joining…" : "Join with Bespken"}
+          </button>
+        )}
       </div>
-      {joinState.status === "success" ? (
-        <p className="mt-3 text-sm text-amber-400">Bespken is joining this call</p>
+      {joined ? (
+        <p className="mt-3 text-sm text-stone-300">
+          ✅ Bespken has joined this call. You&apos;ll be notified when the transcript is ready.
+        </p>
       ) : null}
       {joinState.status === "error" ? (
         <p className="mt-3 text-sm text-red-400" role="alert">
