@@ -10,7 +10,7 @@ const CALENDAR_READONLY_SCOPE =
 type JoinState =
   | { status: "idle" }
   | { status: "loading" }
-  | { status: "success" }
+  | { status: "success"; meetingId?: string }
   | { status: "error"; message: string };
 
 function formatEventWhen(iso: string): string {
@@ -222,7 +222,10 @@ export default function DashboardView() {
       const response = await fetch("/api/meetings/join", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ meetingUrl: event.meetingUrl }),
+        body: JSON.stringify({
+          meetingUrl: event.meetingUrl,
+          meetingTitle: event.summary,
+        }),
       });
       const payload: unknown = await response.json().catch(() => null);
 
@@ -240,9 +243,19 @@ export default function DashboardView() {
         return;
       }
 
+      const data =
+        typeof payload === "object" && payload !== null && "data" in payload
+          ? (payload as { data?: { id?: string; meeting_id?: string } }).data
+          : undefined;
+
+      const meetingId = data?.id || data?.meeting_id;
+
       setJoinById((current) => ({
         ...current,
-        [event.id]: { status: "success" },
+        [event.id]: {
+          status: "success",
+          meetingId,
+        },
       }));
     } catch {
       setJoinById((current) => ({
@@ -408,6 +421,7 @@ function EventCard({
 }) {
   const loading = joinState.status === "loading";
   const joined = joinState.status === "success";
+  const meetingId = joinState.status === "success" ? joinState.meetingId : undefined;
 
   return (
     <li className="rounded-2xl border border-white/8 bg-white/2 p-5 hover:border-amber-400/20 hover:bg-white/4 transition-all duration-300">
@@ -417,9 +431,20 @@ function EventCard({
           <p className="text-sm text-stone-400 mt-1">{formatEventWhen(event.start)}</p>
         </div>
         {joined ? (
-          <span className="shrink-0 inline-flex items-center px-4 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium text-sm">
-            Joined
-          </span>
+          <div className="flex items-center gap-2.5">
+            {meetingId ? (
+              <a
+                href={`/meetings/${meetingId}`}
+                className="shrink-0 px-3.5 py-2 rounded-lg bg-white/8 hover:bg-white/12 border border-white/12 text-white font-medium text-sm transition-all duration-150 inline-flex items-center gap-1.5"
+              >
+                <span>Review page</span>
+                <span aria-hidden="true">→</span>
+              </a>
+            ) : null}
+            <span className="shrink-0 inline-flex items-center px-3.5 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-medium text-sm">
+              Joined
+            </span>
+          </div>
         ) : (
           <button
             type="button"
@@ -432,9 +457,19 @@ function EventCard({
         )}
       </div>
       {joined ? (
-        <p className="mt-3 text-sm text-stone-300">
-          ✅ Bespken has joined this call. You&apos;ll be notified when the transcript is ready.
-        </p>
+        <div className="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm text-stone-300">
+          <p>
+            ✅ Bespken has joined this call. You&apos;ll be notified when the transcript is ready.
+          </p>
+          {meetingId ? (
+            <a
+              href={`/meetings/${meetingId}`}
+              className="text-amber-400 hover:text-amber-300 font-medium text-xs inline-flex items-center gap-1 transition-colors"
+            >
+              Open review screen &rarr;
+            </a>
+          ) : null}
+        </div>
       ) : null}
       {joinState.status === "error" ? (
         <p className="mt-3 text-sm text-red-400" role="alert">

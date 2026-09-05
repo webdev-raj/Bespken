@@ -20,6 +20,7 @@ export default function TestMeetingPage() {
   const [meetingUrl, setMeetingUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [botId, setBotId] = useState<string | null>(null);
+  const [meetingId, setMeetingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function handleJoin() {
@@ -27,18 +28,20 @@ export default function TestMeetingPage() {
     if (!url) {
       setError("Paste a Zoom or Google Meet URL first.");
       setBotId(null);
+      setMeetingId(null);
       return;
     }
 
     setLoading(true);
     setError(null);
     setBotId(null);
+    setMeetingId(null);
 
     try {
       const response = await fetch("/api/meetings/join", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ meetingUrl: url }),
+        body: JSON.stringify({ meetingUrl: url, meetingTitle: "Test Meeting" }),
       });
 
       const payload: unknown = await response.json().catch(() => null);
@@ -55,10 +58,16 @@ export default function TestMeetingPage() {
 
       const data =
         typeof payload === "object" && payload !== null && "data" in payload
-          ? (payload as { data?: { bot_id?: unknown } }).data
+          ? (payload as { data?: { bot_id?: unknown; id?: unknown; meeting_id?: unknown } }).data
           : undefined;
       const returnedBotId =
         typeof data?.bot_id === "string" ? data.bot_id : null;
+      const returnedMeetingId =
+        typeof data?.id === "string"
+          ? data.id
+          : typeof data?.meeting_id === "string"
+            ? data.meeting_id
+            : null;
 
       if (!returnedBotId) {
         setError("Join succeeded but no bot_id was returned.");
@@ -66,6 +75,7 @@ export default function TestMeetingPage() {
       }
 
       setBotId(returnedBotId);
+      setMeetingId(returnedMeetingId);
     } catch {
       setError("Could not reach /api/meetings/join.");
     } finally {
@@ -104,14 +114,27 @@ export default function TestMeetingPage() {
         </button>
 
         {botId ? (
-          <div className="space-y-1 text-sm">
+          <div className="space-y-2 rounded-xl border border-white/10 bg-white/5 p-4 text-sm">
             <p>
               bot_id: <span className="font-mono text-white/90">{botId}</span>
             </p>
-            <p className="text-white/70">
+            {meetingId ? (
+              <p>
+                meeting_id: <span className="font-mono text-white/90">{meetingId}</span>
+              </p>
+            ) : null}
+            <p className="text-white/70 text-xs">
               Bot is joining the call. Once the call ends, check the webhook
-              logs for the transcript.
+              logs for the transcript and extraction.
             </p>
+            {meetingId ? (
+              <a
+                href={`/meetings/${meetingId}`}
+                className="inline-block mt-2 px-3 py-1.5 rounded bg-amber-400 text-stone-900 font-semibold text-xs hover:bg-amber-300 transition-colors"
+              >
+                View Review Screen &rarr;
+              </a>
+            ) : null}
           </div>
         ) : null}
 
