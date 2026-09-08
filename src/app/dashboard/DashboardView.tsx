@@ -213,14 +213,16 @@ export default function DashboardView() {
     setJoinById({});
   }
 
-  async function joinEvent(event: CalendarEvent) {
+  async function joinEvent(event: CalendarEvent, options?: { force?: boolean }) {
     const currentState = joinById[event.id];
-    if (
-      joinInFlight.current.has(event.id) ||
-      currentState?.status === "loading" ||
-      currentState?.status === "success"
-    ) {
-      return;
+    if (!options?.force) {
+      if (
+        joinInFlight.current.has(event.id) ||
+        currentState?.status === "loading" ||
+        currentState?.status === "success"
+      ) {
+        return;
+      }
     }
 
     joinInFlight.current.add(event.id);
@@ -363,6 +365,7 @@ export default function DashboardView() {
                     event={event}
                     joinState={joinById[event.id] ?? { status: "idle" }}
                     onJoin={() => void joinEvent(event)}
+                    onJoinAgain={() => void joinEvent(event, { force: true })}
                   />
                 ))}
               </ul>
@@ -428,10 +431,12 @@ function EventCard({
   event,
   joinState,
   onJoin,
+  onJoinAgain,
 }: {
   event: CalendarEvent;
   joinState: JoinState;
   onJoin: () => void;
+  onJoinAgain: () => void;
 }) {
   const loading = joinState.status === "loading";
   const joined = joinState.status === "success";
@@ -475,14 +480,23 @@ function EventCard({
           <p>
             ✅ Bespken has joined this call. You&apos;ll be notified when the transcript is ready.
           </p>
-          {meetingId ? (
-            <a
-              href={`/meetings/${meetingId}`}
-              className="text-amber-400 hover:text-amber-300 font-medium text-xs inline-flex items-center gap-1 transition-colors"
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onJoinAgain}
+              className="text-stone-500 hover:text-stone-300 font-medium text-xs transition-colors"
             >
-              Open review screen &rarr;
-            </a>
-          ) : null}
+              Send bot again
+            </button>
+            {meetingId ? (
+              <a
+                href={`/meetings/${meetingId}`}
+                className="text-amber-400 hover:text-amber-300 font-medium text-xs inline-flex items-center gap-1 transition-colors"
+              >
+                Open review screen &rarr;
+              </a>
+            ) : null}
+          </div>
         </div>
       ) : null}
       {joinState.status === "error" ? (

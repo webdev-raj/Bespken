@@ -64,36 +64,75 @@ export async function POST(request: Request) {
   }
 
   try {
+    // Only reuse a join that started seconds ago (double-click). A leftover
+    // `joining` row from a finished/failed bot must not block a new bot.
+    const JOIN_REUSE_WINDOW_MS = 2 * 60 * 1000;
+
     if (calendarEventId) {
       const { data: existing } = await supabase
         .from("meetings")
-        .select("id, bot_id, status, meeting_title")
+        .select("id, bot_id, status, meeting_title, created_at")
         .eq("user_id", user.id)
         .eq("calendar_event_id", calendarEventId)
-        .in("status", ["joining", "completed", "extracted"])
+        .eq("status", "joining")
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
 
-      if (existing?.status === "joining") {
-        console.log("[meetings/join] Reusing in-flight meeting (idempotent)", {
+      if (existing) {
+        const createdAt = existing.created_at
+          ? new Date(existing.created_at).getTime()
+          : 0;
+        const isFresh = Date.now() - createdAt < JOIN_REUSE_WINDOW_MS;
+
+        if (isFresh) {
+          console.log("[meetings/join] Reusing in-flight meeting (idempotent)", {
+            meeting_id: existing.id,
+            bot_id: existing.bot_id,
+            calendar_event_id: calendarEventId,
+          });
+          return Response.json(
+            {
+              success: true,
+              data: {
+                id: existing.id,
+                bot_id: existing.bot_id,
+                meeting_id: existing.id,
+                status: existing.status,
+                meeting_title: existing.meeting_title,
+              },
+            },
+            { status: 200 },
+          );
+        }
+
+        console.log("[meetings/join] Stale joining row — marking failed and sending a new bot", {
           meeting_id: existing.id,
           bot_id: existing.bot_id,
           calendar_event_id: calendarEventId,
+          created_at: existing.created_at,
         });
-        return Response.json(
-          {
-            success: true,
-            data: {
-              id: existing.id,
-              bot_id: existing.bot_id,
-              meeting_id: existing.id,
-              status: existing.status,
-              meeting_title: existing.meeting_title,
+
+        const { error: failError } = await supabase
+          .from("meetings")
+          .update({
+            status: "failed",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existing.id)
+          .eq("status", "joining");
+
+        if (failError) {
+          console.error("[meetings/join] Could not clear stale joining row:", failError);
+          return Response.json(
+            {
+              success: false,
+              error: "stale_join_locked",
+              message: failError.message,
             },
-          },
-          { status: 200 },
-        );
+            { status: 409 },
+          );
+        }
       }
     }
 
