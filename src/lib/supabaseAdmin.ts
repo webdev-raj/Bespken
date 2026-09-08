@@ -2,18 +2,17 @@ import { createClient } from "@supabase/supabase-js";
 import { requirePublicEnv } from "@/lib/supabaseEnv";
 
 /**
- * Supabase client for background tasks, server webhooks, or admin operations.
- * Uses SUPABASE_SERVICE_ROLE_KEY if available, falling back to NEXT_PUBLIC_SUPABASE_ANON_KEY.
+ * Service-role client for webhooks. RLS is bypassed only with this key.
+ * Do not fall back to the anon key — webhook requests have no user JWT,
+ * so SELECT/UPDATE on `meetings` would silently return zero rows.
  */
 export function getSupabaseAdmin() {
   const { url } = requirePublicEnv();
-  const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!key) {
     throw new Error(
-      "Missing Supabase key. Please set SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY.",
+      "SUPABASE_SERVICE_ROLE_KEY is not set. The meetings webhook cannot read or update rows under RLS without the service role key.",
     );
   }
 

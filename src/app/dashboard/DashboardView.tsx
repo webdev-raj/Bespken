@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getSupabase } from "@/lib/supabase";
 import type { CalendarEvent } from "@/lib/googleCalendar";
 
@@ -67,6 +67,7 @@ export default function DashboardView() {
   const [error, setError] = useState<string | null>(null);
   const [oauthBusy, setOauthBusy] = useState(false);
   const [joinById, setJoinById] = useState<Record<string, JoinState>>({});
+  const joinInFlight = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -213,6 +214,16 @@ export default function DashboardView() {
   }
 
   async function joinEvent(event: CalendarEvent) {
+    const currentState = joinById[event.id];
+    if (
+      joinInFlight.current.has(event.id) ||
+      currentState?.status === "loading" ||
+      currentState?.status === "success"
+    ) {
+      return;
+    }
+
+    joinInFlight.current.add(event.id);
     setJoinById((current) => ({
       ...current,
       [event.id]: { status: "loading" },
@@ -225,11 +236,13 @@ export default function DashboardView() {
         body: JSON.stringify({
           meetingUrl: event.meetingUrl,
           meetingTitle: event.summary,
+          calendarEventId: event.id,
         }),
       });
       const payload: unknown = await response.json().catch(() => null);
 
       if (!response.ok) {
+        joinInFlight.current.delete(event.id);
         setJoinById((current) => ({
           ...current,
           [event.id]: {
@@ -258,6 +271,7 @@ export default function DashboardView() {
         },
       }));
     } catch {
+      joinInFlight.current.delete(event.id);
       setJoinById((current) => ({
         ...current,
         [event.id]: {

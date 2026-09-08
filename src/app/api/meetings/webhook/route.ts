@@ -1,5 +1,7 @@
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 import { runExtraction } from "@/lib/geminiExtraction";
+import { parseWebhookIdentifiers } from "@/lib/meetingBaas";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
  * Extracts concatenated or full transcript string from transcription JSON.
@@ -123,33 +125,56 @@ export async function POST(request: Request) {
       ? (body.data as Record<string, unknown>)
       : body;
 
-  const eventType = String(body.event || data.event || body.type || data.type || "");
-  const botId = String(
-    data.bot_id ||
-      body.bot_id ||
-      data.id ||
-      body.id ||
-      (typeof data.bot === "object" && data.bot !== null ? (data.bot as Record<string, unknown>).id : "") ||
-      "",
-  );
+  const ids = parseWebhookIdentifiers(payload);
+  const eventType = ids.eventType;
+  const botId = ids.botId;
 
-  if (!botId) {
-    console.warn("[Meeting BaaS webhook] No bot_id found in webhook payload:", payload);
+  console.log("[Meeting BaaS webhook] Parsed identifiers", {
+    eventType,
+    bot_id: botId,
+    generic_id: ids.genericId,
+    bespken_meeting_id: ids.bespkenMeetingId,
+    calendar_event_id: ids.calendarEventId,
+  });
+
+  if (!botId && !ids.bespkenMeetingId) {
+    console.warn("[Meeting BaaS webhook] No bot_id or bespken_meeting_id in payload:", payload);
     return Response.json({ received: true, warning: "missing_bot_id" }, { status: 200 });
   }
 
-  const supabase = getSupabaseAdmin();
+  let supabase;
+  try {
+    supabase = getSupabaseAdmin();
+  } catch (error) {
+    console.error("[Meeting BaaS webhook] Cannot access meetings table:", error);
+    return Response.json(
+      {
+        received: false,
+        error: "missing_service_role_key",
+        message:
+          "Set SUPABASE_SERVICE_ROLE_KEY so the webhook can read/update meetings (anon key is blocked by RLS).",
+      },
+      { status: 500 },
+    );
+  }
+  const meeting = await findMeetingRow(supabase, ids);
 
   // Handle bot.failed
   if (eventType === "bot.failed" || eventType.includes("failed")) {
     console.log(`[Meeting BaaS webhook] Bot ${botId} failed.`);
+    if (!meeting) {
+      console.warn("[Meeting BaaS webhook] No meeting record for failed bot", ids);
+      return Response.json({ received: true, warning: "meeting_not_found" }, { status: 200 });
+    }
+
     const { error: updateError } = await supabase
       .from("meetings")
       .update({
         status: "failed",
+        bot_id: botId ?? meeting.bot_id,
         updated_at: new Date().toISOString(),
       })
-      .eq("bot_id", botId);
+      .eq("id", meeting.id);
 
     if (updateError) {
       console.error("[Meeting BaaS webhook] Failed to update meeting status to failed:", updateError);
@@ -162,21 +187,32 @@ export async function POST(request: Request) {
   if (eventType === "bot.completed" || eventType.includes("completed")) {
     console.log(`[Meeting BaaS webhook] Bot ${botId} completed. Processing transcript...`);
 
-    // 1. Find matching row in "meetings"
-    const { data: meeting, error: findError } = await supabase
-      .from("meetings")
-      .select("id, status")
-      .eq("bot_id", botId)
-      .maybeSingle();
-
-    if (findError) {
-      console.error("[Meeting BaaS webhook] Error finding meeting by bot_id:", findError);
-      return Response.json({ received: true, error: "lookup_error" }, { status: 200 });
+    if (!meeting) {
+      console.warn("[Meeting BaaS webhook] No meeting record found", {
+        bot_id: botId,
+        generic_id: ids.genericId,
+        bespken_meeting_id: ids.bespkenMeetingId,
+        calendar_event_id: ids.calendarEventId,
+      });
+      return Response.json({ received: true, warning: "meeting_not_found" }, { status: 200 });
     }
 
-    if (!meeting) {
-      console.warn(`[Meeting BaaS webhook] No meeting record found for bot_id ${botId}`);
-      return Response.json({ received: true, warning: "meeting_not_found" }, { status: 200 });
+    if (botId && meeting.bot_id !== botId) {
+      console.warn("[Meeting BaaS webhook] bot_id mismatch — updating stored bot_id to webhook value", {
+        meeting_id: meeting.id,
+        stored_bot_id: meeting.bot_id,
+        webhook_bot_id: botId,
+      });
+      const { error: syncError } = await supabase
+        .from("meetings")
+        .update({
+          bot_id: botId,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", meeting.id);
+      if (syncError) {
+        console.error("[Meeting BaaS webhook] Failed to sync webhook bot_id:", syncError);
+      }
     }
 
     // 2. Fetch transcript from presigned URL
@@ -263,4 +299,72 @@ export async function POST(request: Request) {
   }
 
   return Response.json({ received: true, event: eventType }, { status: 200 });
+}
+
+async function findMeetingRow(
+  supabase: SupabaseClient,
+  ids: ReturnType<typeof parseWebhookIdentifiers>,
+) {
+  if (ids.bespkenMeetingId) {
+    const { data, error } = await supabase
+      .from("meetings")
+      .select("id, bot_id, status")
+      .eq("id", ids.bespkenMeetingId)
+      .maybeSingle();
+
+    if (error) {
+      console.error("[Meeting BaaS webhook] Error finding meeting by id:", error);
+    } else if (data) {
+      console.log("[Meeting BaaS webhook] Matched meeting by bespken_meeting_id", {
+        meeting_id: data.id,
+        stored_bot_id: data.bot_id,
+        webhook_bot_id: ids.botId,
+      });
+      return data;
+    }
+  }
+
+  if (ids.botId) {
+    const { data, error } = await supabase
+      .from("meetings")
+      .select("id, bot_id, status")
+      .eq("bot_id", ids.botId)
+      .maybeSingle();
+
+    if (error) {
+      console.error("[Meeting BaaS webhook] Error finding meeting by bot_id:", error);
+      return null;
+    }
+
+    if (data) {
+      console.log("[Meeting BaaS webhook] Matched meeting by bot_id", {
+        meeting_id: data.id,
+        bot_id: ids.botId,
+      });
+      return data;
+    }
+  }
+
+  if (ids.calendarEventId) {
+    const { data, error } = await supabase
+      .from("meetings")
+      .select("id, bot_id, status")
+      .eq("calendar_event_id", ids.calendarEventId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error("[Meeting BaaS webhook] Error finding meeting by calendar_event_id:", error);
+    } else if (data) {
+      console.log("[Meeting BaaS webhook] Matched meeting by calendar_event_id", {
+        meeting_id: data.id,
+        stored_bot_id: data.bot_id,
+        webhook_bot_id: ids.botId,
+      });
+      return data;
+    }
+  }
+
+  return null;
 }

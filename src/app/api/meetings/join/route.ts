@@ -15,6 +15,19 @@ function webhookUrlFromEnv(): string {
   return `${siteUrl}/api/meetings/webhook`;
 }
 
+function stringField(body: unknown, key: string): string | null {
+  if (
+    typeof body === "object" &&
+    body !== null &&
+    key in body &&
+    typeof (body as Record<string, unknown>)[key] === "string"
+  ) {
+    const value = ((body as Record<string, unknown>)[key] as string).trim();
+    return value || null;
+  }
+  return null;
+}
+
 export async function POST(request: Request) {
   const supabase = await createSupabaseServerClient();
   const {
@@ -39,21 +52,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const meetingUrl =
-    typeof body === "object" &&
-    body !== null &&
-    "meetingUrl" in body &&
-    typeof body.meetingUrl === "string"
-      ? body.meetingUrl.trim()
-      : "";
-
-  const meetingTitle =
-    typeof body === "object" &&
-    body !== null &&
-    "meetingTitle" in body &&
-    typeof body.meetingTitle === "string"
-      ? body.meetingTitle.trim()
-      : null;
+  const meetingUrl = stringField(body, "meetingUrl") ?? "";
+  const meetingTitle = stringField(body, "meetingTitle");
+  const calendarEventId = stringField(body, "calendarEventId");
 
   if (!meetingUrl) {
     return Response.json(
@@ -63,21 +64,81 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await joinMeeting(meetingUrl, webhookUrlFromEnv());
+    if (calendarEventId) {
+      const { data: existing } = await supabase
+        .from("meetings")
+        .select("id, bot_id, status, meeting_title")
+        .eq("user_id", user.id)
+        .eq("calendar_event_id", calendarEventId)
+        .in("status", ["joining", "completed", "extracted"])
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existing?.status === "joining") {
+        console.log("[meetings/join] Reusing in-flight meeting (idempotent)", {
+          meeting_id: existing.id,
+          bot_id: existing.bot_id,
+          calendar_event_id: calendarEventId,
+        });
+        return Response.json(
+          {
+            success: true,
+            data: {
+              id: existing.id,
+              bot_id: existing.bot_id,
+              meeting_id: existing.id,
+              status: existing.status,
+              meeting_title: existing.meeting_title,
+            },
+          },
+          { status: 200 },
+        );
+      }
+    }
+
+    const meetingId = crypto.randomUUID();
+
+    console.log("[meetings/join] Creating bot then persisting meeting", {
+      meeting_id: meetingId,
+      user_id: user.id,
+      meeting_url: meetingUrl,
+      calendar_event_id: calendarEventId,
+    });
+
+    const result = await joinMeeting(meetingUrl, webhookUrlFromEnv(), {
+      extra: {
+        bespken_meeting_id: meetingId,
+        ...(calendarEventId ? { calendar_event_id: calendarEventId } : {}),
+      },
+    });
+
+    const botId = result.data.bot_id;
+
+    console.log("[meetings/join] Persisting bot_id onto meeting row", {
+      meeting_id: meetingId,
+      bot_id: botId,
+    });
 
     const { data: meetingRow, error: insertError } = await supabase
       .from("meetings")
       .insert({
+        id: meetingId,
         user_id: user.id,
-        bot_id: result.data.bot_id,
+        bot_id: botId,
         meeting_title: meetingTitle,
+        calendar_event_id: calendarEventId,
         status: "joining",
       })
       .select("id, bot_id, status, meeting_title")
       .single();
 
     if (insertError) {
-      console.error("[meetings/join] Error inserting meeting row:", insertError);
+      console.error("[meetings/join] Error inserting meeting row:", {
+        meeting_id: meetingId,
+        bot_id: botId,
+        insertError,
+      });
       return Response.json(
         {
           success: false,
@@ -88,12 +149,25 @@ export async function POST(request: Request) {
       );
     }
 
+    if (meetingRow.bot_id !== botId) {
+      console.error("[meetings/join] Persisted bot_id does not match create-bot response", {
+        meeting_id: meetingRow.id,
+        created_bot_id: botId,
+        stored_bot_id: meetingRow.bot_id,
+      });
+    }
+
+    console.log("[meetings/join] Meeting saved", {
+      meeting_id: meetingRow.id,
+      bot_id: meetingRow.bot_id,
+    });
+
     return Response.json(
       {
         success: true,
         data: {
           id: meetingRow.id,
-          bot_id: result.data.bot_id,
+          bot_id: meetingRow.bot_id,
           meeting_id: meetingRow.id,
           status: meetingRow.status,
           meeting_title: meetingRow.meeting_title,
