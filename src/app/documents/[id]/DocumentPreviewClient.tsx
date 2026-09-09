@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRef } from "react";
+import AppNav from "@/components/AppNav";
 
 export type DocumentRecord = {
   id: string;
@@ -30,33 +31,36 @@ export default function DocumentPreviewClient({
 
   return (
     <main className="min-h-screen bg-[#0B0B0F] text-white print:bg-white print:text-black">
-      <header className="no-print px-6 py-5 border-b border-white/8">
-        <div className="max-w-3xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <p className="text-xs uppercase tracking-widest text-stone-500">
-              {document.type}
-            </p>
-            <h1 className="text-lg font-semibold tracking-tight">
-              {document.title || "Proposal"}
-            </h1>
+      <div className="no-print">
+        <AppNav />
+        <header className="px-6 py-5 border-b border-white/8">
+          <div className="max-w-3xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <p className="text-xs uppercase tracking-widest text-stone-500">
+                {document.type}
+              </p>
+              <h1 className="text-lg font-semibold tracking-tight">
+                {document.title || "Proposal"}
+              </h1>
+            </div>
+            <div className="flex items-center gap-3">
+              <Link
+                href={`/meetings/${document.meeting_id}`}
+                className="px-4 py-2.5 rounded-lg border border-white/10 text-stone-300 text-sm font-medium hover:bg-white/5 transition-colors"
+              >
+                Back to meeting
+              </Link>
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                className="px-5 py-2.5 rounded-lg bg-amber-400 text-stone-900 font-semibold text-sm hover:bg-amber-300 active:scale-[0.98] transition-all duration-150"
+              >
+                Download as PDF
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Link
-              href={`/meetings/${document.meeting_id}`}
-              className="px-4 py-2.5 rounded-lg border border-white/10 text-stone-300 text-sm font-medium hover:bg-white/5 transition-colors"
-            >
-              Back to meeting
-            </Link>
-            <button
-              type="button"
-              onClick={handleDownloadPdf}
-              className="px-5 py-2.5 rounded-lg bg-amber-400 text-stone-900 font-semibold text-sm hover:bg-amber-300 active:scale-[0.98] transition-all duration-150"
-            >
-              Download as PDF
-            </button>
-          </div>
-        </div>
-      </header>
+        </header>
+      </div>
 
       <section className="no-print max-w-3xl mx-auto px-6 pt-6">
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 flex items-start gap-3">

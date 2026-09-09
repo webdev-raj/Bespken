@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import AppNav from "@/components/AppNav";
 import { getSupabase } from "@/lib/supabase";
 
 export type MeetingRecord = {
@@ -212,58 +213,35 @@ export default function MeetingReviewClient({ meetingId }: { meetingId: string }
         aria-hidden="true"
       />
 
-      {/* Header */}
-      <header className="relative z-10 px-6 py-5 border-b border-white/8">
-        <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-1.5 text-xs text-stone-400 hover:text-stone-200 transition-colors duration-200 px-2.5 py-1.5 rounded-lg border border-white/8 hover:border-white/15 bg-white/2"
-            >
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                <path d="M10 13L5 8L10 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              Dashboard
-            </Link>
+      <AppNav />
 
-            <Link href="/" className="flex items-center gap-2.5 group" aria-label="Bespken home">
-              <div className="w-7 h-7 rounded-lg bg-amber-400 flex items-center justify-center group-hover:bg-amber-300 transition-colors duration-200">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-                  <path d="M2 2h5a3 3 0 010 6H2V2z" fill="#0B0B0F" />
-                  <path d="M2 8h6a3 3 0 010 6H2V8z" fill="#0B0B0F" opacity="0.6" />
-                </svg>
-              </div>
-              <span className="text-base font-bold text-white tracking-tight">Bespken</span>
-            </Link>
+      {meeting ? (
+        <div className="relative z-10 border-b border-white/8 bg-white/[0.02]">
+          <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-end gap-2">
+            <span className="text-xs text-stone-400">Status:</span>
+            {meeting.status === "joining" ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-400/10 text-amber-400 border border-amber-400/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+                Joining call
+              </span>
+            ) : meeting.status === "completed" ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-sky-500/10 text-sky-400 border border-sky-400/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
+                Extracting details
+              </span>
+            ) : meeting.status === "extracted" ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                Extracted
+              </span>
+            ) : meeting.status === "failed" ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">
+                Failed
+              </span>
+            ) : null}
           </div>
-
-          {meeting ? (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-stone-400">Status:</span>
-              {meeting.status === "joining" ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-400/10 text-amber-400 border border-amber-400/20">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
-                  Joining call
-                </span>
-              ) : meeting.status === "completed" ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-400/10 text-amber-400 border border-amber-400/20">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                  Extracting details
-                </span>
-              ) : meeting.status === "extracted" ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  Extracted
-                </span>
-              ) : meeting.status === "failed" ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">
-                  Failed
-                </span>
-              ) : null}
-            </div>
-          ) : null}
         </div>
-      </header>
+      ) : null}
 
       {/* Main Content Area */}
       <section className="relative z-10 max-w-4xl mx-auto px-6 py-10 space-y-6">
