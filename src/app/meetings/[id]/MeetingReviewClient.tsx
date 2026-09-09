@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase";
 
 export type MeetingRecord = {
@@ -35,7 +36,10 @@ export default function MeetingReviewClient({ meetingId }: { meetingId: string }
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
   const [showTranscript, setShowTranscript] = useState(false);
+  const router = useRouter();
 
   const fetchMeeting = useCallback(async () => {
     try {
@@ -122,6 +126,72 @@ export default function MeetingReviewClient({ meetingId }: { meetingId: string }
       setSaveError("Failed to save changes. Please try again.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleGenerateProposal() {
+    if (!meeting || meeting.status !== "extracted") return;
+
+    setGenerating(true);
+    setGenerateError(null);
+    setSaveError(null);
+
+    try {
+      const supabase = getSupabase();
+      const { error: updateError } = await supabase
+        .from("meetings")
+        .update({
+          extracted_client: client.trim() || null,
+          extracted_scope: scope.trim() || null,
+          extracted_price: price.trim() || null,
+          extracted_timeline: timeline.trim() || null,
+          extracted_notes: notes.trim() || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", meeting.id);
+
+      if (updateError) {
+        setGenerateError(updateError.message);
+        return;
+      }
+
+      const response = await fetch("/api/documents/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ meetingId: meeting.id, type: "proposal" }),
+      });
+      const payload: unknown = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        const message =
+          typeof payload === "object" &&
+          payload !== null &&
+          "message" in payload &&
+          typeof (payload as { message?: unknown }).message === "string"
+            ? (payload as { message: string }).message
+            : "Could not generate proposal.";
+        setGenerateError(message);
+        return;
+      }
+
+      const documentId =
+        typeof payload === "object" &&
+        payload !== null &&
+        "data" in payload &&
+        typeof (payload as { data?: { id?: unknown } }).data?.id === "string"
+          ? (payload as { data: { id: string } }).data.id
+          : null;
+
+      if (!documentId) {
+        setGenerateError("Proposal was created but no document id was returned.");
+        return;
+      }
+
+      router.push(`/documents/${documentId}`);
+    } catch {
+      setGenerateError("Could not generate the proposal. Please try again.");
+    } finally {
+      setGenerating(false);
     }
   }
 
@@ -398,6 +468,12 @@ export default function MeetingReviewClient({ meetingId }: { meetingId: string }
                 </div>
               ) : null}
 
+              {generateError ? (
+                <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                  {generateError}
+                </div>
+              ) : null}
+
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
                 <button
@@ -408,7 +484,7 @@ export default function MeetingReviewClient({ meetingId }: { meetingId: string }
                   {showTranscript ? "Hide raw transcript" : "View raw transcript"}
                 </button>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center justify-end gap-3">
                   <Link
                     href="/dashboard"
                     className="px-4 py-2.5 rounded-lg border border-white/10 text-stone-300 text-sm font-medium hover:bg-white/5 transition-colors"
@@ -418,10 +494,19 @@ export default function MeetingReviewClient({ meetingId }: { meetingId: string }
 
                   <button
                     type="submit"
-                    disabled={saving}
+                    disabled={saving || generating}
                     className="px-6 py-2.5 rounded-lg bg-amber-400 text-stone-900 font-semibold text-sm hover:bg-amber-300 active:scale-[0.98] transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 focus:ring-offset-[#0B0B0F]"
                   >
                     {saving ? "Saving…" : "Save changes"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => void handleGenerateProposal()}
+                    disabled={!isExtracted || generating || saving}
+                    className="px-6 py-2.5 rounded-lg border border-amber-400/40 bg-amber-400/10 text-amber-300 font-semibold text-sm hover:bg-amber-400/15 active:scale-[0.98] transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 focus:ring-offset-[#0B0B0F]"
+                  >
+                    {generating ? "Generating…" : "Generate Proposal"}
                   </button>
                 </div>
               </div>
