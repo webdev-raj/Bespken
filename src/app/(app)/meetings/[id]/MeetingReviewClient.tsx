@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import AppNav from "@/components/AppNav";
 import { getSupabase } from "@/lib/supabase";
 
 export type MeetingRecord = {
@@ -202,19 +201,7 @@ export default function MeetingReviewClient({ meetingId }: { meetingId: string }
   const isFailed = meeting?.status === "failed";
 
   return (
-    <main className="relative min-h-screen bg-[#0B0B0F] text-white">
-      {/* Background glow */}
-      <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[720px] max-w-full h-[280px] rounded-full opacity-20 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(ellipse at 50% 0%, #F2A84D 0%, rgba(242, 168, 77, 0.12) 45%, transparent 75%)",
-        }}
-        aria-hidden="true"
-      />
-
-      <AppNav />
-
+    <main className="relative text-white">
       {meeting ? (
         <div className="relative z-10 border-b border-white/8 bg-white/[0.02]">
           <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-end gap-2">

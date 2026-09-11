@@ -1,13 +1,7 @@
-import type { Metadata } from "next";
-import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import type { DashboardDocument, DashboardMeeting } from "@/lib/dashboardTypes";
-import DashboardView from "./DashboardView";
+import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
-export const metadata: Metadata = {
-  title: "Dashboard — Bespken",
-};
-
-export default async function DashboardPage() {
+export async function loadWorkspaceData() {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -54,11 +48,5 @@ export default async function DashboardPage() {
     }));
   }
 
-  return (
-    <DashboardView
-      initialEmail={email}
-      meetings={meetings}
-      documents={documents}
-    />
-  );
+  return { email, meetings, documents };
 }

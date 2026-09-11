@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useRef } from "react";
-import AppNav from "@/components/AppNav";
 
 export type DocumentRecord = {
   id: string;
@@ -30,9 +29,8 @@ export default function DocumentPreviewClient({
   }
 
   return (
-    <main className="min-h-screen bg-[#0B0B0F] text-white print:bg-white print:text-black">
+    <main className="text-white print:bg-white print:text-black">
       <div className="no-print">
-        <AppNav />
         <header className="px-6 py-5 border-b border-white/8">
           <div className="max-w-3xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
