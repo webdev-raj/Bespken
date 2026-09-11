@@ -86,9 +86,12 @@ export function statusBadgeClass(status: string): string {
   return "bg-white/8 text-stone-300 border-white/12";
 }
 
-export function platformFromUrl(url: string): "meet" | "zoom" | "other" {
+export function platformFromUrl(url: string): "meet" | "zoom" | "teams" | "other" {
   if (/meet\.google\.com/i.test(url)) return "meet";
   if (/zoom\.us/i.test(url)) return "zoom";
+  if (/(?:teams\.microsoft\.com|teams\.live\.com|teams\.cloud\.microsoft)/i.test(url)) {
+    return "teams";
+  }
   return "other";
 }
 

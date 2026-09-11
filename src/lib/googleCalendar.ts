@@ -32,6 +32,8 @@ type GoogleEventsResponse = {
 
 const ZOOM_URL_RE = /https?:\/\/(?:[a-z0-9-]+\.)?zoom\.us\/[^\s<>"'\\)]+/i;
 const MEET_URL_RE = /https?:\/\/meet\.google\.com\/[^\s<>"'\\)]+/i;
+const TEAMS_URL_RE =
+  /https?:\/\/(?:[a-z0-9.-]+\.)?(?:teams\.microsoft\.com|teams\.live\.com|teams\.cloud\.microsoft)\/[^\s<>"'\\)]+/i;
 
 export function extractMeetingUrl(event: GoogleCalendarEvent): string | null {
   if (event.hangoutLink && isMeetingUrl(event.hangoutLink)) {
@@ -58,7 +60,30 @@ export function extractMeetingUrl(event: GoogleCalendarEvent): string | null {
 }
 
 function isMeetingUrl(value: string): boolean {
-  return MEET_URL_RE.test(value) || ZOOM_URL_RE.test(value);
+  return MEET_URL_RE.test(value) || ZOOM_URL_RE.test(value) || TEAMS_URL_RE.test(value);
+}
+
+function decodeCalendarHtml(text: string): string {
+  return text
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">");
+}
+
+function firstMatchingUrl(text: string): string | null {
+  const meet = text.match(MEET_URL_RE)?.[0];
+  if (meet) {
+    return meet;
+  }
+
+  const zoom = text.match(ZOOM_URL_RE)?.[0];
+  if (zoom) {
+    return zoom;
+  }
+
+  return text.match(TEAMS_URL_RE)?.[0] ?? null;
 }
 
 function findMeetingUrlInText(text: string | undefined): string | null {
@@ -66,13 +91,17 @@ function findMeetingUrlInText(text: string | undefined): string | null {
     return null;
   }
 
-  const meet = text.match(MEET_URL_RE)?.[0];
-  if (meet) {
-    return meet;
+  const decoded = decodeCalendarHtml(text);
+  const hrefs = decoded.matchAll(/href=["'](https?:\/\/[^"']+)/gi);
+
+  for (const match of hrefs) {
+    const href = match[1];
+    if (href && isMeetingUrl(href)) {
+      return href;
+    }
   }
 
-  const zoom = text.match(ZOOM_URL_RE)?.[0];
-  return zoom ?? null;
+  return firstMatchingUrl(decoded);
 }
 
 function eventDateTime(value: GoogleEventDate | undefined): string | null {
@@ -125,6 +154,7 @@ export async function fetchPrimaryCalendarEvents(
   url.searchParams.set("singleEvents", "true");
   url.searchParams.set("orderBy", "startTime");
   url.searchParams.set("maxResults", "50");
+  url.searchParams.set("conferenceDataVersion", "1");
 
   const response = await fetch(url, {
     headers: {

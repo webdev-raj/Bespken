@@ -266,8 +266,8 @@ export default function UpcomingCalendar() {
           <div className="py-8 px-2 text-center space-y-3">
             <p className="text-sm text-stone-400 max-w-sm mx-auto">
               {signedIn
-                ? "Calendar access is missing or expired. Reconnect so Bespken can see your upcoming Zoom and Google Meet calls."
-                : "Sign in with Google to pull upcoming Zoom and Google Meet calls from your calendar."}
+                ? "Calendar access is missing or expired. Reconnect so Bespken can see your upcoming Meet, Zoom, and Teams calls."
+                : "Sign in with Google to pull upcoming Meet, Zoom, and Teams calls from your calendar."}
             </p>
             <button
               type="button"
