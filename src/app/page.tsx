@@ -11,10 +11,10 @@ import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
   alternates: {
-    canonical: 'https://bespken.com',
+    canonical: 'https://bespken.vercel.app',
   },
   openGraph: {
-    url: 'https://bespken.com',
+    url: 'https://bespken.vercel.app',
   },
 };
 

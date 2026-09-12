@@ -4,7 +4,7 @@
 
 Bespken joins your scheduled client video calls, transcribes what matters, and drafts a ready-to-send proposal or invoice — scope, pricing, timeline — before you've even opened a new document.
 
-🔗 **Landing page & waitlist:** [bespken.com](https://bespken.com)
+🔗 **Landing page & waitlist:** [bespken.com](https://bespken.vercel.app)
 
 ---
 

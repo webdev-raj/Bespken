@@ -14,7 +14,7 @@ const description =
   "Turn a client call into a proposal. Bespken joins Zoom or Google Meet, transcribes the conversation, and drafts a ready-to-send proposal or invoice.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://bespken.com"),
+  metadataBase: new URL("https://bespken.vercel.app"),
   title,
   description,
   keywords: [

@@ -6,6 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
     },
-    sitemap: "https://bespken.com/sitemap.xml",
+    sitemap: "https://bespken.vercel.app/sitemap.xml",
   };
 }
