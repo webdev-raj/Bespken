@@ -1,31 +1,48 @@
-import type { Metadata } from 'next';
-import localFont from 'next/font/local';
-import './globals.css';
-import { Analytics } from "@vercel/analytics/next"
+import type { Metadata } from "next";
+import localFont from "next/font/local";
+import { Analytics } from "@vercel/analytics/next";
+import "./globals.css";
 
 const generalSans = localFont({
-  src: '../../public/fonts/GeneralSans-Regular.otf',
-  variable: '--font-general-sans',
-  display: 'swap',
+  src: "../../public/fonts/GeneralSans-Regular.otf",
+  variable: "--font-general-sans",
+  display: "swap",
 });
 
+const title = "Bespken – Turn Client Calls Into Proposals Automatically";
+const description =
+  "Turn a client call into a proposal. Bespken joins Zoom or Google Meet, transcribes the conversation, and drafts a ready-to-send proposal or invoice.";
+
 export const metadata: Metadata = {
-  title: 'Bespken — Proposals & Invoices from Your Client Calls',
-  description:
-    'Bespken joins your Zoom or Google Meet calls, transcribes the conversation, and drafts a ready-to-send proposal or invoice — automatically. Built for freelancers and consultants.',
-  metadataBase: new URL('https://bespken.com'),
+  metadataBase: new URL("https://bespken.com"),
+  title,
+  description,
+  keywords: [
+    "client proposal generator",
+    "freelance invoice from call",
+    "AI meeting to proposal",
+    "automatic proposal writer",
+    "freelancer call transcription tool",
+  ],
   openGraph: {
-    title: 'Bespken — Proposals & Invoices from Your Client Calls',
-    description:
-      "Stop reconstructing proposals from memory. Bespken listens to your client calls and sends you a draft before you've even opened a new tab.",
-    type: 'website',
-    url: 'https://bespken.com',
+    title,
+    description,
+    type: "website",
+    siteName: "Bespken",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Bespken — turn client calls into ready-to-send proposals",
+      },
+    ],
   },
   twitter: {
-    card: 'summary_large_image',
-    title: 'Bespken — Your next proposal writes itself.',
-    description:
-      "Stop reconstructing proposals from memory. Bespken listens to your client calls and sends you a draft before you've even opened a new tab.",
+    card: "summary_large_image",
+    title,
+    description,
+    images: ["/og-image.png"],
   },
   robots: {
     index: true,
@@ -39,10 +56,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${generalSans.variable}`}>
-      <body className="antialiased bg-[#0a0a0a] text-white w-full max-w-full overflow-x-hidden">{children}</body>
-      <Analytics />
+    <html lang="en" className={generalSans.variable}>
+      <body className="antialiased bg-[#0a0a0a] text-white w-full max-w-full overflow-x-hidden">
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }
-

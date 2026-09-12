@@ -41,7 +41,7 @@ export default function HowItWorksSection() {
             The process
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white">
-            How it works
+            From client call to proposal
           </h2>
         </div>
 

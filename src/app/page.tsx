@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/HeroSection';
 import ProblemSection from '@/components/ProblemSection';
@@ -7,6 +8,15 @@ import WhoItsForSection from '@/components/WhoItsForSection';
 import TrustSection from '@/components/TrustSection';
 import CtaSection from '@/components/CtaSection';
 import Footer from '@/components/Footer';
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: 'https://bespken.com',
+  },
+  openGraph: {
+    url: 'https://bespken.com',
+  },
+};
 
 export default function Home() {
   return (

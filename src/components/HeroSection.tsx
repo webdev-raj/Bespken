@@ -62,8 +62,13 @@ export default function HeroSection() {
         </p>
       </div>
 
-      {/* Visual mockup container */}
-      <div className="relative z-10 mt-16 lg:mt-20 w-full max-w-5xl mx-auto">
+      <figure
+        className="relative z-10 mt-16 lg:mt-20 w-full max-w-5xl mx-auto"
+        aria-label="Product preview: a Zoom call transcript on the left and a drafted client proposal with scope, timeline, and pricing on the right"
+      >
+        <figcaption className="sr-only">
+          Preview of Bespken turning a client call transcript into a ready-to-send proposal with project scope, timeline, and pricing.
+        </figcaption>
         <div className="rounded-2xl sm:rounded-3xl border border-white/10 bg-stone-950/60 backdrop-blur-xl p-4 sm:p-6 lg:p-8 shadow-2xl shadow-black/80 ring-1 ring-white/5 relative overflow-hidden">
           {/* Subtle top glare effect */}
           <div 
@@ -87,7 +92,7 @@ export default function HeroSection() {
 
           <MockupVisual />
         </div>
-      </div>
+      </figure>
     </section>
   );
 }
