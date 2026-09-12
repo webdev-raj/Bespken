@@ -272,17 +272,35 @@ export async function POST(request: Request) {
       console.log(`[Meeting BaaS webhook] Running Gemini extraction for meeting ${meeting.id}...`);
       const extraction = await runExtraction(transcriptText);
 
+      const extractionUpdate: Record<string, unknown> = {
+        extracted_client: extraction.client,
+        extracted_scope: extraction.scope,
+        extracted_price: extraction.price,
+        extracted_timeline: extraction.timeline,
+        extracted_notes: extraction.notes,
+        status: "extracted",
+        updated_at: new Date().toISOString(),
+      };
+
+      if (meeting.original_extracted_client == null) {
+        extractionUpdate.original_extracted_client = extraction.client;
+      }
+      if (meeting.original_extracted_scope == null) {
+        extractionUpdate.original_extracted_scope = extraction.scope;
+      }
+      if (meeting.original_extracted_price == null) {
+        extractionUpdate.original_extracted_price = extraction.price;
+      }
+      if (meeting.original_extracted_timeline == null) {
+        extractionUpdate.original_extracted_timeline = extraction.timeline;
+      }
+      if (meeting.original_extracted_notes == null) {
+        extractionUpdate.original_extracted_notes = extraction.notes;
+      }
+
       const { error: extractedError } = await supabase
         .from("meetings")
-        .update({
-          extracted_client: extraction.client,
-          extracted_scope: extraction.scope,
-          extracted_price: extraction.price,
-          extracted_timeline: extraction.timeline,
-          extracted_notes: extraction.notes,
-          status: "extracted",
-          updated_at: new Date().toISOString(),
-        })
+        .update(extractionUpdate)
         .eq("id", meeting.id);
 
       if (extractedError) {
@@ -308,7 +326,9 @@ async function findMeetingRow(
   if (ids.bespkenMeetingId) {
     const { data, error } = await supabase
       .from("meetings")
-      .select("id, bot_id, status")
+      .select(
+        "id, bot_id, status, original_extracted_client, original_extracted_scope, original_extracted_price, original_extracted_timeline, original_extracted_notes",
+      )
       .eq("id", ids.bespkenMeetingId)
       .maybeSingle();
 
@@ -327,7 +347,9 @@ async function findMeetingRow(
   if (ids.botId) {
     const { data, error } = await supabase
       .from("meetings")
-      .select("id, bot_id, status")
+      .select(
+        "id, bot_id, status, original_extracted_client, original_extracted_scope, original_extracted_price, original_extracted_timeline, original_extracted_notes",
+      )
       .eq("bot_id", ids.botId)
       .maybeSingle();
 
@@ -348,7 +370,9 @@ async function findMeetingRow(
   if (ids.calendarEventId) {
     const { data, error } = await supabase
       .from("meetings")
-      .select("id, bot_id, status")
+      .select(
+        "id, bot_id, status, original_extracted_client, original_extracted_scope, original_extracted_price, original_extracted_timeline, original_extracted_notes",
+      )
       .eq("calendar_event_id", ids.calendarEventId)
       .order("created_at", { ascending: false })
       .limit(1)

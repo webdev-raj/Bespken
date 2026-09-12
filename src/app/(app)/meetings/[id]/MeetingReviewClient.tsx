@@ -4,6 +4,11 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase";
+import {
+  buildEditLog,
+  normalizeExtractedValue,
+  type EditLogEntry,
+} from "@/lib/editLog";
 
 export type MeetingRecord = {
   id: string;
@@ -17,6 +22,12 @@ export type MeetingRecord = {
   extracted_price: string | null;
   extracted_timeline: string | null;
   extracted_notes: string | null;
+  original_extracted_client: string | null;
+  original_extracted_scope: string | null;
+  original_extracted_price: string | null;
+  original_extracted_timeline: string | null;
+  original_extracted_notes: string | null;
+  edit_log: EditLogEntry[] | null;
   created_at: string;
   updated_at: string;
 };
@@ -104,21 +115,68 @@ export default function MeetingReviewClient({ meetingId }: { meetingId: string }
 
     try {
       const supabase = getSupabase();
+      const editedAt = new Date().toISOString();
+      const nextClient = normalizeExtractedValue(client);
+      const nextScope = normalizeExtractedValue(scope);
+      const nextPrice = normalizeExtractedValue(price);
+      const nextTimeline = normalizeExtractedValue(timeline);
+      const nextNotes = normalizeExtractedValue(notes);
+      const nextEditLog = buildEditLog({
+        originals: {
+          client: meeting.original_extracted_client,
+          scope: meeting.original_extracted_scope,
+          price: meeting.original_extracted_price,
+          timeline: meeting.original_extracted_timeline,
+          notes: meeting.original_extracted_notes,
+        },
+        current: {
+          client: nextClient,
+          scope: nextScope,
+          price: nextPrice,
+          timeline: nextTimeline,
+          notes: nextNotes,
+        },
+        previousSaved: {
+          client: meeting.extracted_client,
+          scope: meeting.extracted_scope,
+          price: meeting.extracted_price,
+          timeline: meeting.extracted_timeline,
+          notes: meeting.extracted_notes,
+        },
+        existingLog: meeting.edit_log,
+        editedAt,
+      });
+
       const { error: updateError } = await supabase
         .from("meetings")
         .update({
-          extracted_client: client.trim() || null,
-          extracted_scope: scope.trim() || null,
-          extracted_price: price.trim() || null,
-          extracted_timeline: timeline.trim() || null,
-          extracted_notes: notes.trim() || null,
-          updated_at: new Date().toISOString(),
+          extracted_client: nextClient,
+          extracted_scope: nextScope,
+          extracted_price: nextPrice,
+          extracted_timeline: nextTimeline,
+          extracted_notes: nextNotes,
+          edit_log: nextEditLog,
+          updated_at: editedAt,
         })
         .eq("id", meeting.id);
 
       if (updateError) {
         setSaveError(updateError.message);
       } else {
+        setMeeting((current) =>
+          current
+            ? {
+                ...current,
+                extracted_client: nextClient,
+                extracted_scope: nextScope,
+                extracted_price: nextPrice,
+                extracted_timeline: nextTimeline,
+                extracted_notes: nextNotes,
+                edit_log: nextEditLog,
+                updated_at: editedAt,
+              }
+            : current,
+        );
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 4000);
       }
